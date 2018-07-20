@@ -35,10 +35,16 @@ namespace Parse.Common.Internal {
           jsonEncoded = Json.Encode(dictionary);
         }
 
+// The WebPlayer plugin was deprecated in Unity 2017 
+// TODO: completely remove this code when support for Unity 5 is removed
+#if UNITY_5
         if (Application.isWebPlayer) {
           PlayerPrefs.SetString(ParseStorageFileName, jsonEncoded);
           PlayerPrefs.Save();
-        } else if (Application.platform == RuntimePlatform.tvOS) {
+        } 
+        else
+#endif
+        if (Application.platform == RuntimePlatform.tvOS) {
           Debug.Log("Running on TvOS, prefs cannot be saved.");
         } else {
           using (var fs = new FileStream(settingsPath, FileMode.Create, FileAccess.Write)) {
@@ -55,9 +61,14 @@ namespace Parse.Common.Internal {
         string jsonString = null;
 
         try {
+// The WebPlayer plugin was deprecated in Unity 2017 
+// TODO: completely remove this code when support for Unity 5 is removed
+#if UNITY_5
           if (Application.isWebPlayer) {
             jsonString = PlayerPrefs.GetString(ParseStorageFileName, null);
-          } else if (Application.platform == RuntimePlatform.tvOS) {
+          } else 
+#endif
+                    if (Application.platform == RuntimePlatform.tvOS) {
             Debug.Log("Running on TvOS, prefs cannot be loaded.");
           } else {
             using (var fs = new FileStream(settingsPath, FileMode.Open, FileAccess.Read)) {
