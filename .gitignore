@@ -115,3 +115,4 @@ UpgradeLog*.XML
 
 # idea files
 .idea/
+.vs/
