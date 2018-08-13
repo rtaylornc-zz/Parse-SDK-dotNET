@@ -9,7 +9,7 @@ namespace Parse.Core.Internal
     {
         void Reset();
 
-        IHttpClient HttpClient { get; }
+        IHttpClient HttpClient { get; set; }
         IParseCommandRunner CommandRunner { get; }
         IStorageController StorageController { get; }
 
