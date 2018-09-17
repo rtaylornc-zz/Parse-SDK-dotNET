@@ -14,7 +14,10 @@ namespace Parse.Core.Internal
     {
         private readonly IParseCommandRunner commandRunner;
 
-        public ParseQueryController(IParseCommandRunner commandRunner) => this.commandRunner = commandRunner;
+        public ParseQueryController(IParseCommandRunner commandRunner) 
+	{ 
+		this.commandRunner = commandRunner; 
+	}
 
         public Task<IEnumerable<IObjectState>> FindAsync<T>(ParseQuery<T> query, ParseUser user, CancellationToken cancellationToken) where T : ParseObject => FindAsync(query.ClassName, query.BuildParameters(), user?.SessionToken, cancellationToken).OnSuccess(t => (from item in t.Result["results"] as IList<object> select ParseObjectCoder.Instance.Decode(item as IDictionary<string, object>, ParseDecoder.Instance)));
 
@@ -32,7 +35,20 @@ namespace Parse.Core.Internal
             var parameters = query.BuildParameters();
             parameters["limit"] = 1;
 
-            return FindAsync(query.ClassName, parameters, user?.SessionToken, cancellationToken).OnSuccess(t => (t.Result["results"] as IList<object>).FirstOrDefault() as IDictionary<string, object> is Dictionary<string, object> item && item != null ? ParseObjectCoder.Instance.Decode(item, ParseDecoder.Instance) : null);
+            return FindAsync(query.ClassName, parameters, user?.SessionToken, cancellationToken).OnSuccess(t =>
+            {
+                var list = t.Result["results"] as IList<object>;
+                if (list != null)
+                {
+                    var item = list.FirstOrDefault() as IDictionary<string, object>;
+                    if (item != null)
+                    {
+                        return ParseObjectCoder.Instance.Decode(item, ParseDecoder.Instance);
+                    }
+                }
+
+                return null;
+            });
         }
 
         private Task<IDictionary<string, object>> FindAsync(string className, IDictionary<string, object> parameters, string sessionToken, CancellationToken cancellationToken) => commandRunner.RunCommandAsync(new ParseCommand($"classes/{Uri.EscapeDataString(className)}?{ParseClient.BuildQueryString(parameters)}", method: "GET", sessionToken: sessionToken, data: null), cancellationToken: cancellationToken).OnSuccess(t => t.Result.Item2);

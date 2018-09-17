@@ -152,7 +152,14 @@ namespace Parse
         /// all <see cref="ParseObject"/>s of the provided class.
         /// </summary>
         /// <param name="className">The name of the class to retrieve ParseObjects for.</param>
-        public ParseQuery(string className) => this.className = className ?? throw new ArgumentNullException("className", "Must specify a ParseObject class name when creating a ParseQuery.");
+        public ParseQuery(string className)
+        {
+            if (className == null)
+            {
+                throw new ArgumentNullException("className", "Must specify a ParseObject class name when creating a ParseQuery.");
+            }
+            this.className = className;
+        }
 
         /// <summary>
         /// Constructs a query that is the or of the given queries.
@@ -172,7 +179,11 @@ namespace Parse
                 className = q.className;
                 var parameters = q.BuildParameters();
                 if (parameters.Count == 0) continue;
-                if (!parameters.TryGetValue("where", out object where) || parameters.Count > 1) throw new ArgumentException("None of the queries in an or query can have non-filtering clauses");
+                object where;
+                if (!parameters.TryGetValue("where", out where) || parameters.Count > 1) 
+		{
+			throw new ArgumentException("None of the queries in an or query can have non-filtering clauses");
+		}
                 orValue.Add(where as IDictionary<string, object>);
             }
             return new ParseQuery<T>(new ParseQuery<T>(className), where: new Dictionary<string, object> { { "$or", orValue } });
@@ -377,7 +388,14 @@ namespace Parse
         /// <code>i</code> - Case insensitive search
         /// <code>m</code> Search across multiple lines of input</param>
         /// <returns>A new query with the additional constraint.</returns>
-        public ParseQuery<T> WhereMatches(string key, Regex regex, string modifiers) => !regex.Options.HasFlag(RegexOptions.ECMAScript) ? throw new ArgumentException("Only ECMAScript-compatible regexes are supported. Please use the ECMAScript RegexOptions flag when creating your regex.") : new ParseQuery<T>(this, where: new Dictionary<string, object> { { key, EncodeRegex(regex, modifiers) } });
+        public ParseQuery<T> WhereMatches(string key, Regex regex, string modifiers)
+        {
+            if (!regex.Options.HasFlag(RegexOptions.ECMAScript))
+            {
+                throw new ArgumentException("Only ECMAScript-compatible regexes are supported. Please use the ECMAScript RegexOptions flag when creating your regex.");
+            }
+            return new ParseQuery<T>(this, where: new Dictionary<string, object> { { key, EncodeRegex(regex, modifiers) } });
+        }
 
         /// <summary>
         /// Adds a regular expression constraint for finding string values that match the provided
@@ -531,7 +549,11 @@ namespace Parse
         public Task<T> FirstOrDefaultAsync(CancellationToken cancellationToken)
         {
             EnsureNotInstallationQuery();
-            return QueryController.FirstAsync(this, ParseUser.CurrentUser, cancellationToken).OnSuccess(t => t.Result is IObjectState state && state != null ? ParseObject.FromState<T>(state, ClassName) : default(T));
+            return QueryController.FirstAsync(this, ParseUser.CurrentUser, cancellationToken).OnSuccess(t =>
+            {
+                IObjectState state = t.Result as IObjectState;
+                return state != null ? ParseObject.FromState<T>(state, ClassName) : default(T);
+            });
         }
 
         /// <summary>
@@ -547,7 +569,17 @@ namespace Parse
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A single ParseObject that satisfies this query.</returns>
         /// <exception cref="ParseException">If no results match the query.</exception>
-        public Task<T> FirstAsync(CancellationToken cancellationToken) => FirstOrDefaultAsync(cancellationToken).OnSuccess(t => t.Result ?? throw new ParseException(ParseException.ErrorCode.ObjectNotFound, "No results matched the query."));
+        public Task<T> FirstAsync(CancellationToken cancellationToken)
+        {
+            return FirstOrDefaultAsync(cancellationToken).OnSuccess(t =>
+            {
+                if (t.Result == null)
+                {
+                    throw new ParseException(ParseException.ErrorCode.ObjectNotFound, "No results matched the query.");
+                }
+                return t.Result;
+            });
+        }
 
         /// <summary>
         /// Counts the number of objects that match this query.
@@ -585,7 +617,15 @@ namespace Parse
         {
             ParseQuery<T> singleItemQuery = new ParseQuery<T>(className).WhereEqualTo("objectId", objectId);
             singleItemQuery = new ParseQuery<T>(singleItemQuery, includes: includes, selectedKeys: selectedKeys, limit: 1);
-            return singleItemQuery.FindAsync(cancellationToken).OnSuccess(t => t.Result.FirstOrDefault() ?? throw new ParseException(ParseException.ErrorCode.ObjectNotFound, "Object with the given objectId not found."));
+            return singleItemQuery.FindAsync(cancellationToken).OnSuccess(t =>
+            {
+                T first = t.Result.FirstOrDefault();
+                if (first == null)
+                {
+                    throw new ParseException(ParseException.ErrorCode.ObjectNotFound, "Object with the given objectId not found.");
+                }
+                return first;
+            });
         }
 
         internal object GetConstraint(string key) => where?.GetOrDefault(key, null);
@@ -633,7 +673,11 @@ namespace Parse
         /// </summary>
         /// <param name="obj">The object to compare with the current object.</param>
         /// <returns><c>true</c> if the specified object is equal to the current object; otherwise, <c>false</c></returns>
-        public override bool Equals(object obj) => obj == null || !(obj is ParseQuery<T> other) ? false : Equals(className, other.ClassName) && where.CollectionsEqual(other.where) && orderBy.CollectionsEqual(other.orderBy) && includes.CollectionsEqual(other.includes) && selectedKeys.CollectionsEqual(other.selectedKeys) && Equals(skip, other.skip) && Equals(limit, other.limit);
+        public override bool Equals(object obj)
+        {
+            ParseQuery<T> other = obj as ParseQuery<T>;
+            return obj == null || other == null ? false : Equals(className, other.ClassName) && where.CollectionsEqual(other.where) && orderBy.CollectionsEqual(other.orderBy) && includes.CollectionsEqual(other.includes) && selectedKeys.CollectionsEqual(other.selectedKeys) && Equals(skip, other.skip) && Equals(limit, other.limit);
+        }
 
         /// <summary>
         /// Serves as the default hash function.

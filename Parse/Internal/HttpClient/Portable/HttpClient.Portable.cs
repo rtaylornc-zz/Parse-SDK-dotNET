@@ -21,7 +21,10 @@ namespace Parse.Common.Internal
 
         public HttpClient() : this(new NetHttpClient { }) { }
 
-        public HttpClient(NetHttpClient client) => this.client = client;
+        public HttpClient(NetHttpClient client)
+        {
+            this.client = client;
+        }
 
         private NetHttpClient client;
 

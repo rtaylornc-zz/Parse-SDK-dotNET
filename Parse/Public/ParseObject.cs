@@ -136,7 +136,11 @@ namespace Parse
                 var result = SubclassingController.Instantiate(className);
                 result.ObjectId = objectId;
                 result.IsDirty = false; // Left in because the property setter might be doing something funky.
-                return result.IsDirty ? throw new InvalidOperationException("A ParseObject subclass default constructor must not make changes to the object that cause it to be dirty.") : result;
+                if (result.IsDirty)
+                {
+                    throw new InvalidOperationException("A ParseObject subclass default constructor must not make changes to the object that cause it to be dirty.");
+                }
+                return result;
             }
             finally { isCreatingPointer.Value = false; }
         }
@@ -167,7 +171,12 @@ namespace Parse
 
         #endregion
 
-        private static string GetFieldForPropertyName(String className, string propertyName) => SubclassingController.GetPropertyMappings(className).TryGetValue(propertyName, out string fieldName) ? fieldName : fieldName;
+        private static string GetFieldForPropertyName(String className, string propertyName)
+        {
+            string fieldName = null;
+            SubclassingController.GetPropertyMappings(className).TryGetValue(propertyName, out fieldName);
+            return fieldName;
+        }
 
         /// <summary>
         /// Sets the value of a property based upon its associated ParseFieldName attribute.
@@ -200,7 +209,11 @@ namespace Parse
         /// <param name="defaultValue">The value to return if the property is not present on the ParseObject.</param>
         /// <param name="propertyName">The name of the property.</param>
         /// <typeparam name="T">The return type of the property.</typeparam>
-        protected T GetProperty<T>(T defaultValue, [CallerMemberName] string propertyName = null) => TryGetValue(GetFieldForPropertyName(ClassName, propertyName), out T result) ? result : defaultValue;
+        protected T GetProperty<T>(T defaultValue, [CallerMemberName] string propertyName = null)
+        {
+            T result;
+            return TryGetValue(GetFieldForPropertyName(ClassName, propertyName), out result) ? result : defaultValue;
+        }
 
         /// <summary>
         /// Allows subclasses to set values for non-pointer construction.
@@ -254,7 +267,8 @@ namespace Parse
                 foreach (var pair in operationsBeforeSave)
                 {
                     var operation1 = pair.Value;
-                    nextOperations.TryGetValue(pair.Key, out IParseFieldOperation operation2);
+                    IParseFieldOperation operation2;
+                    nextOperations.TryGetValue(pair.Key, out operation2);
                     if (operation2 != null) operation2 = operation2.MergeWithPrevious(operation1);
                     else operation2 = operation1;
                     nextOperations[pair.Key] = operation2;
@@ -370,7 +384,8 @@ namespace Parse
                 }
                 else if (traverseParseObjects)
                 {
-                    if (root is ParseObject obj)
+                    ParseObject obj = root as ParseObject;
+                    if (obj != null)
                     {
                         itemsToVisit = obj.Keys.ToList().Select(k => obj[k]);
                     }
@@ -464,11 +479,22 @@ namespace Parse
         /// <param name="cancellationToken">The cancellation token.</param>
         public Task SaveAsync(CancellationToken cancellationToken) => taskQueue.Enqueue(toAwait => SaveAsync(toAwait, cancellationToken), cancellationToken);
 
-        internal virtual Task<ParseObject> FetchAsyncInternal(Task toAwait, CancellationToken cancellationToken) => toAwait.OnSuccess(_ => ObjectId == null ? throw new InvalidOperationException("Cannot refresh an object that hasn't been saved to the server.") : ObjectController.FetchAsync(state, ParseUser.CurrentSessionToken, cancellationToken)).Unwrap().OnSuccess(t =>
+        internal virtual Task<ParseObject> FetchAsyncInternal(Task toAwait, CancellationToken cancellationToken)
         {
-            HandleFetchResult(t.Result);
-            return this;
-        });
+		return toAwait.OnSuccess(_ =>
+                {
+                    if (ObjectId == null)
+                    {
+                        throw new InvalidOperationException("Cannot refresh an object that hasn't been saved to the server.");
+                    }
+
+                    return ObjectController.FetchAsync(state, ParseUser.CurrentSessionToken, cancellationToken);
+                }).Unwrap().OnSuccess(t =>
+                {
+                    HandleFetchResult(t.Result);
+                    return this;
+                });
+        }
 
         private static Task DeepSaveAsync(object obj, string sessionToken, CancellationToken cancellationToken)
         {
@@ -942,7 +968,8 @@ namespace Parse
             {
                 foreach (var pair in operations)
                 {
-                    map.TryGetValue(pair.Key, out object oldValue);
+                    object oldValue;
+                    map.TryGetValue(pair.Key, out oldValue);
                     var newValue = pair.Value.Apply(oldValue, pair.Key);
                     if (newValue != ParseDeleteOperation.DeleteToken)
                     {
@@ -987,7 +1014,8 @@ namespace Parse
         {
             lock (mutex)
             {
-                estimatedData.TryGetValue(key, out object oldValue);
+                object oldValue;
+                estimatedData.TryGetValue(key, out oldValue);
                 object newValue = operation.Apply(oldValue, key);
                 if (newValue != ParseDeleteOperation.DeleteToken)
                 {
@@ -999,7 +1027,8 @@ namespace Parse
                 }
 
                 bool wasDirty = CurrentOperations.Count > 0;
-                CurrentOperations.TryGetValue(key, out IParseFieldOperation oldOperation);
+                IParseFieldOperation oldOperation;
+                CurrentOperations.TryGetValue(key, out oldOperation);
                 var newOperation = operation.MergeWithPrevious(oldOperation);
                 CurrentOperations[key] = newOperation;
                 if (!wasDirty)
@@ -1044,7 +1073,8 @@ namespace Parse
 
                     // A relation may be deserialized without a parent or key. Either way,
                     // make sure it's consistent.
-                    if (value is ParseRelationBase relation)
+                    ParseRelationBase relation = value as ParseRelationBase;
+                    if (relation != null)
                     {
                         relation.EnsureParentAndKey(this, key);
                     }
@@ -1085,7 +1115,8 @@ namespace Parse
 
         internal void SetIfDifferent<T>(string key, T value)
         {
-            bool hasCurrent = TryGetValue<T>(key, out T current);
+            T current;
+            bool hasCurrent = TryGetValue<T>(key, out current);
             if (value == null)
             {
                 if (hasCurrent)
@@ -1248,7 +1279,8 @@ namespace Parse
         public ParseRelation<T> GetRelation<T>(string key) where T : ParseObject
         {
             // All the sanity checking is done when add or remove is called.
-            TryGetValue(key, out ParseRelation<T> relation);
+            ParseRelation<T> relation;
+            TryGetValue(key, out relation);
             return relation ?? new ParseRelation<T>(this, key);
         }
 

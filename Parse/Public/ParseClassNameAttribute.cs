@@ -18,7 +18,10 @@ namespace Parse
         /// Constructs a new ParseClassName attribute.
         /// </summary>
         /// <param name="className">The class name to associate with the ParseObject subclass.</param>
-        public ParseClassNameAttribute(string className) => ClassName = className;
+        public ParseClassNameAttribute(string className) 
+	{ 
+		ClassName = className; 
+	}
 
         /// <summary>
         /// Gets the class name to associate with the ParseObject subclass.
