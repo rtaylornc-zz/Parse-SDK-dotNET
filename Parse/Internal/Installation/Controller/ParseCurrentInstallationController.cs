@@ -68,7 +68,7 @@ namespace Parse.Push.Internal
 
                     CurrentInstallation = installation;
                     return saveTask;
-                }).Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, cancellationToken);
         }
 
@@ -106,13 +106,16 @@ namespace Parse.Push.Internal
                             fetchTask = installationIdController.GetAsync().ContinueWith(t =>
                             {
                                 installation.SetIfDifferent("installationId", t.Result.ToString());
-                            });
+                            }, Parse.ParseClient.DefaultTaskContinuationOptions);
                         }
 
                         CurrentInstallation = installation;
-                        return fetchTask.ContinueWith(t => installation);
+                        return fetchTask.ContinueWith(t =>
+                        {
+                            return installation;
+                        }, Parse.ParseClient.DefaultTaskContinuationOptions);
                     });
-                }).Unwrap().Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().Unwrap();
             }, cancellationToken);
         }
 
@@ -128,7 +131,7 @@ namespace Parse.Push.Internal
                 return toAwait.ContinueWith(_ =>
                 {
                     return storageController.LoadAsync().OnSuccess(s => s.Result.ContainsKey(ParseInstallationKey));
-                }).Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, cancellationToken);
         }
 
@@ -151,7 +154,7 @@ namespace Parse.Push.Internal
                 return toAwait.ContinueWith(_ =>
                 {
                     return storageController.LoadAsync().OnSuccess(storage => storage.Result.RemoveAsync(ParseInstallationKey));
-                }).Unwrap().Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().Unwrap();
             }, CancellationToken.None);
         }
     }

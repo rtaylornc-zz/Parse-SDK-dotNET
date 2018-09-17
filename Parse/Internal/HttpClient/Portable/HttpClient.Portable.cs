@@ -85,7 +85,7 @@ namespace Parse.Common.Internal
                     {
                         responseStream.Dispose();
                         return _;
-                    }).Unwrap().OnSuccess(_ =>
+                    }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().OnSuccess(_ =>
                     {
                         // If getting stream size is not supported, then report download only once.
                         if (totalLength == -1) downloadProgress.Report(new ParseDownloadProgressEventArgs { Progress = 1.0 });
@@ -94,8 +94,8 @@ namespace Parse.Common.Internal
                         // Assume UTF-8 encoding.
                         return new Tuple<HttpStatusCode, string>(response.StatusCode, Encoding.UTF8.GetString(resultAsArray, 0, resultAsArray.Length));
                     });
-                });
-            }).Unwrap().Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions);
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().Unwrap();
         }
     }
 }

@@ -55,7 +55,7 @@ namespace Parse.Common.Internal
                     {
                         dictionary = result ?? new Dictionary<string, object>();
                     }
-                });
+                }, Parse.ParseClient.DefaultTaskContinuationOptions);
             }
 
             internal void Update(IDictionary<string, object> contents)
@@ -142,10 +142,13 @@ namespace Parse.Common.Internal
         private readonly Task<IFile> fileTask;
         private StorageDictionary storageDictionary;
 
-        public StorageController() => fileTask = taskQueue.Enqueue(t => t.ContinueWith(_ =>
+        public StorageController()
         {
-            return FileSystem.Current.LocalStorage.CreateFileAsync(ParseStorageFileName, CreationCollisionOption.OpenIfExists);
-        }).Unwrap(), CancellationToken.None);
+            fileTask = taskQueue.Enqueue(t => t.ContinueWith(_ =>
+            {
+                return FileSystem.Current.LocalStorage.CreateFileAsync(ParseStorageFileName, CreationCollisionOption.OpenIfExists);
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap(), CancellationToken.None);
+        }
 
         public StorageController(IFile file)
         {
@@ -165,7 +168,7 @@ namespace Parse.Common.Internal
 
                     storageDictionary = new StorageDictionary(fileTask.Result);
                     return storageDictionary.LoadAsync().OnSuccess(__ => storageDictionary as IStorageDictionary<string, object>);
-                }).Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, CancellationToken.None);
         }
 
@@ -182,7 +185,7 @@ namespace Parse.Common.Internal
 
                     storageDictionary.Update(contents);
                     return storageDictionary.SaveAsync().OnSuccess(__ => storageDictionary as IStorageDictionary<string, object>);
-                }).Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, CancellationToken.None);
         }
     }

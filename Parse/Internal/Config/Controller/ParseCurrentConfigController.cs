@@ -57,7 +57,7 @@ namespace Parse.Core.Internal
                 }
 
                 return Task.FromResult(currentConfig);
-            }), CancellationToken.None).Unwrap();
+            }, Parse.ParseClient.DefaultTaskContinuationOptions), CancellationToken.None).Unwrap();
         }
 
         public Task SetCurrentConfigAsync(ParseConfig config)
@@ -70,7 +70,7 @@ namespace Parse.Core.Internal
                 var jsonString = ParseClient.SerializeJsonString(jsonObject);
 
                 return storageController.LoadAsync().OnSuccess(t => t.Result.AddAsync(CurrentConfigKey, jsonString));
-            }).Unwrap().Unwrap(), CancellationToken.None);
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().Unwrap(), CancellationToken.None);
         }
 
         public Task ClearCurrentConfigAsync()
@@ -80,7 +80,7 @@ namespace Parse.Core.Internal
                 currentConfig = null;
 
                 return storageController.LoadAsync().OnSuccess(t => t.Result.RemoveAsync(CurrentConfigKey));
-            }).Unwrap().Unwrap(), CancellationToken.None);
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().Unwrap(), CancellationToken.None);
         }
 
         public Task ClearCurrentConfigInMemoryAsync()
@@ -88,7 +88,7 @@ namespace Parse.Core.Internal
             return taskQueue.Enqueue(toAwait => toAwait.ContinueWith(_ =>
             {
                 currentConfig = null;
-            }), CancellationToken.None);
+            }, Parse.ParseClient.DefaultTaskContinuationOptions), CancellationToken.None);
         }
     }
 }

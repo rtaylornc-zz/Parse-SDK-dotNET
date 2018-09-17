@@ -72,7 +72,7 @@ namespace Parse.Core.Internal
                     }
                     return new Tuple<HttpStatusCode, IDictionary<string, object>>(response.Item1, null);
                 });
-            }).Unwrap();
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
         }
 
         private const string revocableSessionTokentrueValue = "1";
@@ -84,7 +84,7 @@ namespace Parse.Core.Internal
             {
                 newCommand.Headers.Add(new KeyValuePair<string, string>("X-Parse-Installation-Id", t.Result.ToString()));
                 return newCommand;
-            });
+            }, Parse.ParseClient.DefaultTaskContinuationOptions);
 
             // TODO (richardross): Inject configuration instead of using shared static here.
             ParseClient.Configuration configuration = ParseClient.CurrentConfiguration;

@@ -79,7 +79,7 @@ namespace Parse.Core.Internal
                     CurrentUser = user;
 
                     return saveTask;
-                }).Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, cancellationToken);
         }
 
@@ -117,7 +117,7 @@ namespace Parse.Core.Internal
                         CurrentUser = user;
                         return user;
                     });
-                }).Unwrap();
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, cancellationToken);
         }
 
@@ -131,8 +131,9 @@ namespace Parse.Core.Internal
             return taskQueue.Enqueue(toAwait =>
             {
                 return toAwait.ContinueWith(_ =>
-                  storageController.LoadAsync().OnSuccess(t => t.Result.ContainsKey("CurrentUser"))
-                ).Unwrap();
+                {
+                    return storageController.LoadAsync().OnSuccess(t => t.Result.ContainsKey("CurrentUser"));
+                }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
             }, cancellationToken);
         }
 
@@ -160,7 +161,7 @@ namespace Parse.Core.Internal
                     return toAwait.ContinueWith(_ =>
                     {
                         return storageController.LoadAsync().OnSuccess(t => t.Result.RemoveAsync("CurrentUser"));
-                    }).Unwrap().Unwrap();
+                    }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().Unwrap();
                 }, CancellationToken.None);
             }
         }
@@ -178,7 +179,7 @@ namespace Parse.Core.Internal
         {
             return taskQueue.Enqueue(toAwait =>
             {
-                return toAwait.ContinueWith(_ => GetAsync(cancellationToken)).Unwrap().OnSuccess(t =>
+                return toAwait.ContinueWith(_ => GetAsync(cancellationToken), Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().OnSuccess(t =>
                 {
                     ClearFromDisk();
                 });

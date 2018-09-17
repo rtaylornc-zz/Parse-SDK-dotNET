@@ -34,7 +34,7 @@ namespace Parse.Common.Internal
             lock (mutex)
             {
                 Task toAwait = tail ?? Task.FromResult(true);
-                return toAwait.ContinueWith(task => { }, cancellationToken);
+                return toAwait.ContinueWith(task => {  }, Parse.ParseClient.DefaultTaskContinuationOptions);
             }
         }
 

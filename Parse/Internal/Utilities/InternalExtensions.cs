@@ -101,7 +101,7 @@ namespace Parse.Common.Internal
                 {
                     return Task.FromResult(continuation(t));
                 }
-            }).Unwrap();
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
         }
 
         public static Task OnSuccess(this Task task, Action<Task> continuation)

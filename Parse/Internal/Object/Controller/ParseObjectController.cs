@@ -223,7 +223,7 @@ namespace Parse.Core.Internal
                             "Invalid batch command response."));
                     }
                 }
-            });
+            }, Parse.ParseClient.DefaultTaskContinuationOptions);
 
             return tasks;
         }

@@ -32,6 +32,17 @@ namespace Parse
             "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'f'Z'",
         };
 
+        
+        private static TaskContinuationOptions defaultTaskContinuationOptions = TaskContinuationOptions.None;
+        /// <summary>
+        /// Default flags for Task ContinueWith methods. Use ExecuteSynchronously for singlethreaded environments.
+        /// </summary>
+        public static TaskContinuationOptions DefaultTaskContinuationOptions
+        {
+            get { return defaultTaskContinuationOptions; }
+            set { defaultTaskContinuationOptions = value; }
+        }
+
         /// <summary>
         /// Represents the configuration of the Parse SDK.
         /// </summary>

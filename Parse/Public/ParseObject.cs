@@ -450,7 +450,7 @@ namespace Parse
                 if (t.IsFaulted || t.IsCanceled) HandleFailedSave(currentOperations);
                 else HandleSave(t.Result);
                 return t;
-            }).Unwrap();
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
         }
 
         /// <summary>
@@ -533,7 +533,7 @@ namespace Parse
                                 }
                                 cancellationToken.ThrowIfCancellationRequested();
                                 return t;
-                            }).Unwrap();
+                            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap();
                         }).Unwrap().OnSuccess(t => (object)null);
                     }, cancellationToken);
                 });
@@ -909,7 +909,7 @@ namespace Parse
                 Task.WhenAll(childTasks.ToArray()).ContinueWith((Task task) =>
                 {
                     readyToStart.SetResult(null);
-                });
+                }, Parse.ParseClient.DefaultTaskContinuationOptions);
 
                 return fullTask;
             }

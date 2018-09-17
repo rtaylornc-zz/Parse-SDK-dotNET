@@ -204,7 +204,7 @@ namespace Parse
                     HandleSave(serverState);
                 }
                 return t;
-            }).Unwrap().OnSuccess(_ => SaveCurrentUserAsync(this)).Unwrap();
+            }, Parse.ParseClient.DefaultTaskContinuationOptions).Unwrap().OnSuccess(_ => SaveCurrentUserAsync(this)).Unwrap();
         }
 
         /// <summary>
