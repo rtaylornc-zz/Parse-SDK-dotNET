@@ -11,7 +11,7 @@ namespace Parse.Core.Internal
 
         IHttpClient HttpClient { get; set; }
         IParseCommandRunner CommandRunner { get; }
-        IStorageController StorageController { get; }
+        IStorageController StorageController { get; set; }
 
         IParseCloudCodeController CloudCodeController { get; }
         IParseConfigController ConfigController { get; }
